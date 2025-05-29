@@ -1,30 +1,19 @@
 import { createClient } from "@/utils/supabase/server";
 import { ComicGrid } from "@/components/comic-grid";
 import { notFound } from "next/navigation";
-import { Metadata } from "next";
-
-type BrowsePageParams = {
-  type: string;
-  slug: string;
-};
-
-type BrowseSearchParams = {
-  page?: string;
-};
-
-interface PageProps {
-  params: BrowsePageParams;
-  searchParams: BrowseSearchParams;
-}
-
-export const metadata: Metadata = {
-  title: "Browse Manga",
-};
 
 export default async function BrowseByMetadataPage({
   params,
   searchParams,
-}: PageProps) {
+}: {
+  params: {
+    type: string;
+    slug: string;
+  };
+  searchParams: {
+    page?: string;
+  };
+}) {
   const supabase = await createClient();
   const page = Number(searchParams.page || 1);
   const pageSize = 20;
@@ -39,9 +28,9 @@ export default async function BrowseByMetadataPage({
     "parodies",
     "languages",
     "groups",
-  ] as const;
+  ];
 
-  if (!allowedTypes.includes(type as (typeof allowedTypes)[number])) {
+  if (!allowedTypes.includes(type)) {
     return notFound();
   }
 
