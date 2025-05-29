@@ -1,19 +1,30 @@
 import { createClient } from "@/utils/supabase/server";
 import { ComicGrid } from "@/components/comic-grid";
 import { notFound } from "next/navigation";
+import { Metadata } from "next";
+
+type BrowsePageParams = {
+  type: string;
+  slug: string;
+};
+
+type BrowseSearchParams = {
+  page?: string;
+};
+
+interface PageProps {
+  params: BrowsePageParams;
+  searchParams: BrowseSearchParams;
+}
+
+export const metadata: Metadata = {
+  title: "Browse Manga",
+};
 
 export default async function BrowseByMetadataPage({
   params,
   searchParams,
-}: {
-  params: {
-    type: string;
-    slug: string;
-  };
-  searchParams: {
-    page?: string;
-  };
-}) {
+}: PageProps) {
   const supabase = await createClient();
   const page = Number(searchParams.page || 1);
   const pageSize = 20;
@@ -54,7 +65,7 @@ export default async function BrowseByMetadataPage({
 
   if (metadataError || !metadataRow) return notFound();
 
-  const metadataIdField = `${type.slice(0, -1)}_id`; // e.g., tag_id, artist_id
+  const metadataIdField = `${type.slice(0, -1)}_id`;
 
   const { data: relatedMangaIds, error: relationError } = await supabase
     .from(metadataTable)
@@ -100,7 +111,7 @@ export default async function BrowseByMetadataPage({
     };
   });
 
-  const filtered = formatted.filter((m) => m.slug); // Only show manga with slugs
+  const filtered = formatted.filter((m) => m.slug);
 
   return (
     <main className="container mx-auto px-4 py-12">
