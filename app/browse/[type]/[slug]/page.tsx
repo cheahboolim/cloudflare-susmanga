@@ -1,28 +1,19 @@
 import { createClient } from "@/utils/supabase/server";
 import { ComicGrid } from "@/components/comic-grid";
 import { notFound } from "next/navigation";
-import { Metadata } from "next";
 
-interface BrowseByMetadataPageProps {
+export default async function BrowseByMetadataPage({
+  params,
+  searchParams,
+}: {
   params: {
-    type:
-      | "tags"
-      | "artists"
-      | "categories"
-      | "parodies"
-      | "languages"
-      | "groups";
+    type: string;
     slug: string;
   };
   searchParams: {
     page?: string;
   };
-}
-
-export default async function BrowseByMetadataPage({
-  params,
-  searchParams,
-}: BrowseByMetadataPageProps) {
+}) {
   const supabase = await createClient();
   const page = Number(searchParams.page || 1);
   const pageSize = 20;
@@ -30,10 +21,20 @@ export default async function BrowseByMetadataPage({
 
   const { type, slug } = params;
 
-  const metadataTableMap: Record<
-    BrowseByMetadataPageProps["params"]["type"],
-    string
-  > = {
+  const allowedTypes = [
+    "tags",
+    "artists",
+    "categories",
+    "parodies",
+    "languages",
+    "groups",
+  ] as const;
+
+  if (!allowedTypes.includes(type as (typeof allowedTypes)[number])) {
+    return notFound();
+  }
+
+  const metadataTableMap: Record<string, string> = {
     tags: "manga_tags",
     artists: "manga_artists",
     categories: "manga_categories",
