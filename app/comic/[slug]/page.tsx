@@ -24,6 +24,7 @@ type ComicData = {
   categories: RelatedMeta[];
   languages: RelatedMeta[];
   parodies: RelatedMeta[];
+  characters: RelatedMeta[];
 };
 
 async function getComicBySlug(slug: string): Promise<ComicData | null> {
@@ -47,13 +48,12 @@ async function getComicBySlug(slug: string): Promise<ComicData | null> {
 
   if (mangaErr || !manga) return null;
 
-  const { data: pages }: { data: { image_url: string }[] | null } =
-    await supabase
-      .from("pages")
-      .select("image_url")
-      .eq("manga_id", mangaId)
-      .order("page_number", { ascending: true })
-      .limit(4);
+  const { data: pages } = await supabase
+    .from("pages")
+    .select("image_url")
+    .eq("manga_id", mangaId)
+    .order("page_number", { ascending: true })
+    .limit(4);
 
   async function fetchRelated(
     joinTable: string,
@@ -76,7 +76,7 @@ async function getComicBySlug(slug: string): Promise<ComicData | null> {
       }));
   }
 
-  const [artists, tags, groups, categories, languages, parodies] =
+  const [artists, tags, groups, categories, languages, parodies, characters] =
     await Promise.all([
       fetchRelated("manga_artists", "artist_id"),
       fetchRelated("manga_tags", "tag_id"),
@@ -84,6 +84,7 @@ async function getComicBySlug(slug: string): Promise<ComicData | null> {
       fetchRelated("manga_categories", "category_id"),
       fetchRelated("manga_languages", "language_id"),
       fetchRelated("manga_parodies", "parody_id"),
+      fetchRelated("manga_characters", "character_id"),
     ]);
 
   return {
@@ -98,6 +99,7 @@ async function getComicBySlug(slug: string): Promise<ComicData | null> {
     categories,
     languages,
     parodies,
+    characters,
   };
 }
 
@@ -107,44 +109,69 @@ export async function generateMetadata({
   params: { slug: string };
 }) {
   const supabase = await createClient();
-  const comic = await getComicBySlug(params.slug);
-  if (!comic) {
+
+  const { data: slugRow, error: slugErr } = await supabase
+    .from("slug_map")
+    .select("manga_id")
+    .eq("slug", params.slug)
+    .single();
+
+  if (slugErr || !slugRow) {
     return {
       title: "Comic not found | SusManga",
       description: "This comic does not exist.",
     };
   }
+
+  const mangaId = slugRow.manga_id;
+
+  const { data: manga, error: mangaErr } = await supabase
+    .from("manga")
+    .select("title, feature_image_url")
+    .eq("id", mangaId)
+    .single();
+
+  if (mangaErr || !manga) {
+    return {
+      title: "Comic not found | SusManga",
+      description: "This comic does not exist.",
+    };
+  }
+
   return {
-    title: `${comic.title} | SusManga`,
-    description: `Read ${comic.title} on SusManga.`,
+    title: `${manga.title} | SusManga`,
+    description: `Read ${manga.title} on SusManga.`,
     openGraph: {
-      images: comic.feature_image_url ? [comic.feature_image_url] : [],
+      images: manga.feature_image_url ? [manga.feature_image_url] : [],
     },
   };
 }
 
-export default async function ComicDetailPage({
-  params,
-}: {
+export default async function ComicDetailPage(props: {
   params: { slug: string };
 }) {
-  const comic = await getComicBySlug(params.slug);
+  const { params } = props;
+  const slug = params.slug;
 
+  const comic = await getComicBySlug(slug);
   if (!comic) return notFound();
 
-  function renderLinks(type: string, items: RelatedMeta[]) {
+  function renderLinks(type: string, items: RelatedMeta[], label: string) {
     if (!items.length) return null;
     return (
-      <div className="flex flex-wrap gap-2 mt-2">
-        {items.map(({ id, name, slug }) => (
-          <Link
-            key={id}
-            href={`/browse/${type}/${slug}`}
-            className="text-sm px-3 py-1 rounded-full bg-muted text-muted-foreground hover:bg-pink-100"
-          >
-            {name}
-          </Link>
-        ))}
+      <div className="mt-3">
+        <strong>{label}:</strong>
+        <div className="flex flex-wrap gap-2 mt-1">
+          {items.map(({ id, name, slug }) => (
+            <Link
+              key={id}
+              href={`/browse/${type}/${slug}`}
+              className="text-sm px-3 py-1 rounded-full bg-muted text-muted-foreground hover:bg-pink-100"
+            >
+              {name}
+            </Link>
+          ))}
+        </div>
       </div>
     );
   }
@@ -153,13 +180,14 @@ export default async function ComicDetailPage({
     <main className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto space-y-8">
         {comic.feature_image_url && (
-          <Link href={`/comic/${params.slug}/read`}>
+          <Link href={`/comic/${slug}/read`}>
             <Image
               src={comic.feature_image_url}
               alt={comic.title}
               width={600}
               height={900}
               priority
+              unoptimized // <-- added here to bypass next/image optimization
               className="w-full rounded-lg hover:opacity-90 transition"
             />
           </Link>
@@ -180,28 +208,18 @@ export default async function ComicDetailPage({
                     {name}
                   </Link>
                 ))}
+                <span>&middot;</span>
               </>
             )}
-            <span>&middot;</span>
             <span>{new Date(comic.publishedAt).toLocaleDateString()}</span>
           </div>
 
-          <div>
-            <strong>Tags:</strong>
-            {renderLinks("tags", comic.tags)}
-
-            <strong>Groups:</strong>
-            {renderLinks("groups", comic.groups)}
-
-            <strong>Categories:</strong>
-            {renderLinks("categories", comic.categories)}
-
-            <strong>Languages:</strong>
-            {renderLinks("languages", comic.languages)}
-
-            <strong>Parodies:</strong>
-            {renderLinks("parodies", comic.parodies)}
-          </div>
+          {renderLinks("tags", comic.tags, "Tags")}
+          {renderLinks("groups", comic.groups, "Groups")}
+          {renderLinks("categories", comic.categories, "Categories")}
+          {renderLinks("languages", comic.languages, "Languages")}
+          {renderLinks("parodies", comic.parodies, "Parodies")}
+          {renderLinks("characters", comic.characters, "Characters")}
         </div>
 
         <Button
@@ -209,21 +227,17 @@ export default async function ComicDetailPage({
           size="lg"
           className="bg-[#FF1493] hover:bg-[#e01382] text-white"
         >
-          <Link href={`/comic/${params.slug}/read`}>Start Reading</Link>
+          <Link href={`/comic/${slug}/read`}>Start Reading</Link>
         </Button>
 
         {comic.previewImages.length > 0 && (
           <div>
             <h2 className="text-2xl font-bold mb-4">Preview</h2>
-            <ComicPreview
-              images={comic.previewImages}
-              comicSlug={params.slug}
-            />
+            <ComicPreview images={comic.previewImages} comicSlug={slug} />
           </div>
         )}
       </div>
 
-      {/* Add SimilarManga here under the main content */}
       <SimilarManga
         tagIds={comic.tags.map((tag) => Number(tag.id))}
         currentMangaId={comic.id}

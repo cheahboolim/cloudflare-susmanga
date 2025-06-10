@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Card, CardContent } from "./ui/card";
 
-interface Comic {
+export interface Comic {
   id: string;
   title: string;
   slug: string;
@@ -19,7 +19,7 @@ interface ComicGridProps {
 export function ComicGrid({ comics }: ComicGridProps) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-      {comics.map((comic) => (
+      {comics.map((comic: Comic) => (
         <Card key={comic.id} className="overflow-hidden group">
           <Link href={`/comic/${comic.slug}`}>
             <div className="relative aspect-[3/4] overflow-hidden">
@@ -27,6 +27,7 @@ export function ComicGrid({ comics }: ComicGridProps) {
                 src={comic.featureImage || "/placeholder.svg"}
                 alt={comic.title}
                 fill
+                unoptimized
                 className="object-cover transition-transform group-hover:scale-105"
               />
             </div>

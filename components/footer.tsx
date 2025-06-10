@@ -14,13 +14,13 @@ export function Footer() {
           <Link href="/privacy" className="hover:underline">
             Privacy Policy
           </Link>
-          <Link href="/admin" className="hover:underline">
-            Admin
+          <Link href="/" className="hover:underline">
+            Home
           </Link>
-          <Link href="/manga-posts" className="hover:underline">
+          <Link href="/" className="hover:underline">
             Posts
           </Link>
-          <Link href="/upload-manga" className="hover:underline">
+          <Link href="/" className="hover:underline">
             Upload
           </Link>
         </div>

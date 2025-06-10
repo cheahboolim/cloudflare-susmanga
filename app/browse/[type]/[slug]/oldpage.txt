@@ -124,8 +124,7 @@ export default async function BrowseByMetadataPage({
             {page > 1 && (
               <Link
                 href={`/browse/${type}/${slug}?page=${page - 1}`}
-                className="px-4 py-2 text-white rounded hover:bg-[#ff1493]/90"
-                style={{ backgroundColor: "#ff1493" }}
+                className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700"
               >
                 ← Previous
               </Link>
@@ -133,8 +132,7 @@ export default async function BrowseByMetadataPage({
             {offset + pageSize < mangaIds.length && (
               <Link
                 href={`/browse/${type}/${slug}?page=${page + 1}`}
-                className="px-4 py-2 text-white rounded hover:bg-[#ff1493]/90"
-                style={{ backgroundColor: "#ff1493" }}
+                className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700"
               >
                 Next →
               </Link>

@@ -14,14 +14,20 @@ export default function ComicReaderPage() {
   const { slug } = useParams() as { slug: string };
   const searchParams = useSearchParams();
   const router = useRouter();
-  const currentPage = Number.parseInt(searchParams.get("page") || "1", 10);
 
+  // Parse page param safely and clamp to valid range
+  const rawPage = Number(searchParams.get("page") ?? "1");
   const [comic, setComic] = useState<{ title: string; pages: string[] } | null>(
     null
   );
 
   const supabase = createClient();
 
+  // Zero-based page index, never less than 0
+  const page = Math.max(rawPage - 1, 0);
+  const currentPage = page + 1;
+
+  // Fetch comic data (title + pages)
   useEffect(() => {
     const fetchComicPages = async () => {
       const { data: slugRow, error: slugError } = await supabase
@@ -66,23 +72,37 @@ export default function ComicReaderPage() {
     fetchComicPages();
   }, [slug, supabase]);
 
+  // Scroll to top on page change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [currentPage]);
+
+  // Redirect if page number is out of range after comic loads
+  useEffect(() => {
+    if (!comic) return;
+
+    const totalPages = Math.ceil(comic.pages.length / IMAGES_PER_PAGE);
+    if (rawPage < 1) {
+      router.replace(`/comic/${slug}/read?page=1`);
+    } else if (rawPage > totalPages) {
+      router.replace(`/comic/${slug}/read?page=${totalPages}`);
+    }
+  }, [rawPage, comic, router, slug]);
 
   if (!comic) {
     return <p className="text-center py-10">Loading...</p>;
   }
 
   const totalPages = Math.ceil(comic.pages.length / IMAGES_PER_PAGE);
+
   const pageImages = comic.pages.slice(
-    (currentPage - 1) * IMAGES_PER_PAGE,
-    currentPage * IMAGES_PER_PAGE
+    page * IMAGES_PER_PAGE,
+    (page + 1) * IMAGES_PER_PAGE
   );
 
-  const goToPage = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      router.push(`/comic/${slug}/read?page=${page}`);
+  const goToPage = (pageNumber: number) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+      router.push(`/comic/${slug}/read?page=${pageNumber}`);
     }
   };
 
@@ -105,10 +125,11 @@ export default function ComicReaderPage() {
             <div key={index} className="w-full mb-4">
               <Image
                 src={url}
-                alt={`Page ${index + 1 + (currentPage - 1) * IMAGES_PER_PAGE}`}
+                alt={`Page ${index + 1 + page * IMAGES_PER_PAGE}`}
                 width={800}
                 height={1200}
                 className="w-full rounded-lg"
+                unoptimized // <-- added here
               />
             </div>
           ))}

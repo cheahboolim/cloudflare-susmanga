@@ -15,11 +15,11 @@ export default function UploadMangaPage() {
   const [languages, setLanguages] = useState("");
   const [categories, setCategories] = useState("");
   const [groups, setGroups] = useState("");
+  const [characters, setCharacters] = useState(""); // NEW
   const [pagesText, setPagesText] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  // Slugify utility
   function slugify(text: string) {
     if (!text) return "untitled";
     return text
@@ -31,7 +31,6 @@ export default function UploadMangaPage() {
       .replace(/\-\-+/g, "-");
   }
 
-  // Parse comma-separated list
   function parseList(input: string) {
     return input
       .split(",")
@@ -39,7 +38,6 @@ export default function UploadMangaPage() {
       .filter(Boolean);
   }
 
-  // Upsert entity by name, return id
   async function upsertEntity(table: string, name: string) {
     if (!name) return null;
 
@@ -67,7 +65,6 @@ export default function UploadMangaPage() {
     return inserted?.id ?? null;
   }
 
-  // Map join table to correct foreign key column name for the entity
   const joinTableEntityColumnMap: Record<string, string> = {
     manga_artists: "artist_id",
     manga_tags: "tag_id",
@@ -75,9 +72,9 @@ export default function UploadMangaPage() {
     manga_languages: "language_id",
     manga_categories: "category_id",
     manga_groups: "group_id",
+    manga_characters: "character_id", // NEW
   };
 
-  // Link manga with entity in join table
   async function linkMangaJoin(
     joinTable: string,
     mangaId: string,
@@ -107,7 +104,6 @@ export default function UploadMangaPage() {
       const slug = slugify(title);
       const id = crypto.randomUUID();
 
-      // Insert manga
       const { error: mangaError } = await supabase.from("manga").insert({
         id,
         manga_id: mangaId || null,
@@ -117,14 +113,12 @@ export default function UploadMangaPage() {
       });
       if (mangaError) throw mangaError;
 
-      // Insert slug_map
       const { error: slugError } = await supabase.from("slug_map").insert({
         slug,
         manga_id: id,
       });
       if (slugError) throw slugError;
 
-      // Insert pages
       const pageUrls = pagesText
         .split("\n")
         .map((url) => url.trim())
@@ -143,7 +137,6 @@ export default function UploadMangaPage() {
         if (pagesError) throw pagesError;
       }
 
-      // Normalize & link all entities
       const entitiesToLink = [
         {
           table: "artists",
@@ -171,6 +164,11 @@ export default function UploadMangaPage() {
           joinTable: "manga_groups",
           names: parseList(groups),
         },
+        {
+          table: "characters",
+          joinTable: "manga_characters",
+          names: parseList(characters),
+        },
       ];
 
       for (const { table, joinTable, names } of entitiesToLink) {
@@ -182,7 +180,6 @@ export default function UploadMangaPage() {
 
       setMessage("Manga uploaded successfully!");
 
-      // Clear form
       setMangaId("");
       setTitle("");
       setFeatureImage("");
@@ -192,6 +189,7 @@ export default function UploadMangaPage() {
       setLanguages("");
       setCategories("");
       setGroups("");
+      setCharacters(""); // Clear new field
       setPagesText("");
     } catch (error: unknown) {
       const errMsg =
@@ -302,6 +300,17 @@ export default function UploadMangaPage() {
             value={groups}
             onChange={(e) => setGroups(e.target.value)}
             placeholder="group1, group2"
+            className="w-full border rounded px-3 py-2"
+          />
+        </label>
+
+        <label className="block">
+          <span>Characters</span>
+          <input
+            type="text"
+            value={characters}
+            onChange={(e) => setCharacters(e.target.value)}
+            placeholder="character1, character2"
             className="w-full border rounded px-3 py-2"
           />
         </label>

@@ -1,0 +1,21 @@
+ok now for the important part the migration, hope we can do it right in one shot.
+
+Previously we have built our 1 manga migration, app\newupload\page.tsx. + app\api\newupload\route.ts And it works beautifully (If you want to refer it back for the next build we can.
+
+Now all I want to build is this migration inside our nextjs, to migrate from (here) nhentai to our new website.
+The page posts starts from "577625" and goes down to "1"
+
+Example
+I want "https://nhentai.net/g/577625/" to match with the data on my "app\comic\[slug]\page.tsx"
+And inside the posts they have "https://nhentai.net/g/577625/1/", "https://nhentai.net/g/577625/2/" and so forth until there's no images left and I want each of the images in these pages to match my
+"app\comic\[slug]\read\page.tsx"
+
+As we learn earlier that our page "app\newupload\page.tsx" will pull the images from "https://nhentai.net/g/577625/1/" and serve them using cloudflare R2"
+
+Other notes
+I want the migration page to have start ID and end ID
+I want to have Blacklist Tags (comma separated)
+I want to have progress bar
+I want to have logs showing what's happening
+
+Do you mind listing our the plan first before we build the page? like any thing I need to install?
