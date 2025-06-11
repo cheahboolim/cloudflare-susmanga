@@ -10,11 +10,11 @@ interface MangaWithSlug {
   slug_map: { slug: string }[]; // Array because join returns an array
 }
 
-export default async function SearchPage({
-  searchParams,
-}: {
-  searchParams: { q?: string; page?: string };
-}) {
+// Un‑typed props so Next.js PageProps constraint is satisfied
+export default async function SearchPage(props: any) {
+  const { searchParams } = props as {
+    searchParams: { q?: string; page?: string };
+  };
   const query = searchParams.q?.trim() || "";
   const currentPage = Number(searchParams.page) || 1;
   const pageSize = 20;
