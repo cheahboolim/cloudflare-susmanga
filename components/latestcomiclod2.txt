@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { ComicGrid } from "@/components/comic-grid";
-import { ComicCardSkeleton } from "@/components/comic-skeleton";
 import { Button } from "@/components/ui/button";
 
 const PAGE_SIZE = 10;
@@ -38,21 +37,15 @@ export function LatestComics() {
         .order("created_at", { ascending: false })
         .range(from, to);
 
-      if (mangaError || !manga) {
-        console.error("Error fetching manga:", mangaError);
-        setLoading(false);
-        return;
-      }
-
-      const mangaIds = manga.map((m) => m.id);
-
       const { data: slugs, error: slugError } = await supabase
         .from("slug_map")
-        .select("slug, manga_id")
-        .in("manga_id", mangaIds);
+        .select("slug, manga_id");
 
-      if (slugError || !slugs) {
-        console.error("Error fetching slugs:", slugError);
+      if (mangaError || slugError) {
+        console.error(
+          "Error fetching manga or slugs:",
+          mangaError || slugError
+        );
         setLoading(false);
         return;
       }
@@ -60,7 +53,7 @@ export function LatestComics() {
       const formatted = manga.map((item) => ({
         id: item.id,
         title: item.title,
-        slug: slugs.find((s) => s.manga_id === item.id)?.slug ?? "",
+        slug: slugs?.find((s) => s.manga_id === item.id)?.slug ?? "",
         featureImage: item.feature_image_url,
         author: { name: "Unknown" },
       }));
@@ -86,15 +79,12 @@ export function LatestComics() {
       <h2 className="text-2xl font-bold mb-6 text-center">Popular Right Now</h2>
 
       {loading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          {Array.from({ length: PAGE_SIZE }).map((_, i) => (
-            <ComicCardSkeleton key={i} />
-          ))}
-        </div>
+        <p className="text-center py-10">Loading...</p>
       ) : (
         <>
           <ComicGrid comics={comics} />
 
+          {/* Only Previous and Next buttons */}
           <div className="flex justify-center items-center gap-4 mt-8">
             <Button
               onClick={() => goToPage(page - 1)}

@@ -3,11 +3,15 @@ import { createClient } from "@/utils/supabase/server";
 import { ComicGrid } from "@/components/comic-grid";
 import { Button } from "@/components/ui/button";
 
-interface MangaWithSlug {
+interface Manga {
   id: string;
   title: string;
   feature_image_url: string;
-  slug_map: { slug: string }[]; // Array because join returns an array
+}
+
+interface SlugMap {
+  slug: string;
+  manga_id: string;
 }
 
 export default async function SearchPage({
@@ -34,15 +38,15 @@ export default async function SearchPage({
 
   const {
     data: manga,
-    error,
+    error: mangaError,
     count,
   } = await supabase
     .from("manga")
-    .select("id, title, feature_image_url, slug_map(slug)", { count: "exact" })
+    .select("id, title, feature_image_url", { count: "exact" })
     .ilike("title", `%${query}%`)
     .range(from, to);
 
-  if (error || !manga) {
+  if (mangaError || !manga) {
     return (
       <div className="container mx-auto px-4 py-12 text-center">
         <h1 className="text-3xl font-bold mb-4">Search Error</h1>
@@ -53,10 +57,14 @@ export default async function SearchPage({
     );
   }
 
-  const formatted = (manga as MangaWithSlug[]).map((item) => ({
+  const { data: slugs } = await supabase
+    .from("slug_map")
+    .select("slug, manga_id");
+
+  const formatted = manga.map((item: Manga) => ({
     id: item.id,
     title: item.title,
-    slug: item.slug_map?.[0]?.slug ?? "",
+    slug: slugs?.find((s: SlugMap) => s.manga_id === item.id)?.slug ?? "",
     featureImage: item.feature_image_url,
     author: { name: "Unknown" },
   }));
@@ -75,6 +83,7 @@ export default async function SearchPage({
         <>
           <ComicGrid comics={formatted} />
 
+          {/* Pagination */}
           <div className="mt-10 flex flex-wrap gap-2 justify-center">
             {Array.from({ length: totalPages }).map((_, i) => {
               const pageNum = i + 1;
