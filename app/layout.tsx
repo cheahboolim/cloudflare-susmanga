@@ -3,12 +3,8 @@ import { Inter } from "next/font/google";
 import { AuthProvider } from "@/components/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
-import { Notifications } from "@/components/notifications";
 import { MainNav } from "@/components/main-nav";
 import { Footer } from "@/components/footer";
-import VideoSliderAd from "@/components/trafficstars/VideoSliderAd";
-import PopUnderAd from "@/components/trafficstars/PopUnderAd";
-import InterstitialAd from "@/components/trafficstars/InterstitialAd";
 import BannerAd from "@/components/adsterra/bannerads";
 import BlueBallsAd from "@/components/ownads/blueballsads";
 
@@ -54,10 +50,6 @@ export default function RootLayout({
 
               {/* Bottom Ad — Randomized */}
               <div className="container mx-auto px-4 py-2">
-                {/* TrafficStars Ads 
-                <VideoSliderAd />
-                <PopUnderAd />
-                <InterstitialAd />*/}
                 <BlueBallsAd />
               </div>
 
