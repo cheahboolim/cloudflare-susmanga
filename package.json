@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build && next-on-pages",
     "preview": "npm run build && wrangler pages dev",
-    "deploy": "npm run build && wrangler pages deploy"
+    "deploy": "npm run build && wrangler pages deploy",
+    "pages:build": "npx @cloudflare/next-on-pages",
+    "pages:deploy": "wrangler pages deploy .vercel/output/static"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.826.0",
