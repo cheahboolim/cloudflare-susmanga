@@ -1,9 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    appDir: true,
-  },
+  // Enable standalone output for Cloudflare Pages
   output: 'standalone',
+
+  // Your external image domains
   images: {
     domains: [
       'i1.nhentai.net',
