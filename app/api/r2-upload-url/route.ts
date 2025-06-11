@@ -1,4 +1,4 @@
-export const runtime = "node";
+export const runtime = "nodejs";
 
 // app/api/r2-upload-url/route.ts
 import { NextRequest, NextResponse } from "next/server";
