@@ -1,3 +1,5 @@
+// app/browse/[type]/[slug]/page.tsx
+
 import { createClient } from "@/utils/supabase/server";
 import { ComicGrid } from "@/components/comic-grid";
 import { notFound } from "next/navigation";
@@ -15,12 +17,12 @@ export default async function BrowseByMetadataPage({
   const type = params.type;
   const slug = params.slug;
 
-  // pagination
+  // Pagination setup
   const page = Number((searchParams?.page as string) || 1);
   const pageSize = 20;
   const offset = (page - 1) * pageSize;
 
-  // allow these metadata types
+  // Allowed metadata types
   const allowedTypes = [
     "tags",
     "artists",
@@ -32,7 +34,7 @@ export default async function BrowseByMetadataPage({
   ];
   if (!allowedTypes.includes(type)) return notFound();
 
-  // map each type to its join table
+  // Map metadata type to join table
   const metadataTableMap: Record<string, string> = {
     tags: "manga_tags",
     artists: "manga_artists",
@@ -44,16 +46,14 @@ export default async function BrowseByMetadataPage({
   };
   const metadataTable = metadataTableMap[type];
 
-  // helper to singularize:
+  // Helper: singular form of metadata type
   function singular(t: string) {
-    if (t.endsWith("ies")) {
-      return t.slice(0, -3) + "y";
-    }
+    if (t.endsWith("ies")) return t.slice(0, -3) + "y";
     return t.slice(0, -1);
   }
   const metadataIdField = `${singular(type)}_id`;
 
-  // look up the metadata row by slug
+  // Fetch metadata row by slug
   const { data: metadataRow, error: metadataError } = await supabase
     .from(type)
     .select("id")
@@ -61,7 +61,7 @@ export default async function BrowseByMetadataPage({
     .single();
   if (metadataError || !metadataRow) return notFound();
 
-  // get all manga IDs linked to that metadata
+  // Fetch related manga IDs from join table
   const { data: relatedMangaIds, error: relationError } = await supabase
     .from(metadataTable)
     .select("manga_id")
@@ -81,7 +81,7 @@ export default async function BrowseByMetadataPage({
     );
   }
 
-  // fetch manga entries
+  // Fetch manga data
   const { data: manga, error: mangaError } = await supabase
     .from("manga")
     .select("id, title, feature_image_url")
@@ -89,12 +89,12 @@ export default async function BrowseByMetadataPage({
     .range(offset, offset + pageSize - 1);
   if (mangaError || !manga) return notFound();
 
-  // fetch slugs for linking
+  // Fetch slugs
   const { data: slugs } = await supabase
     .from("slug_map")
     .select("slug, manga_id");
 
-  // format for ComicGrid
+  // Format for ComicGrid
   const formatted = manga.map((item) => {
     const foundSlug = slugs?.find((s) => s.manga_id === item.id)?.slug;
     return {
@@ -119,7 +119,7 @@ export default async function BrowseByMetadataPage({
         <>
           <ComicGrid comics={filtered} />
 
-          {/* Pagination Controls */}
+          {/* Pagination */}
           <div className="flex justify-center gap-4 mt-8">
             {page > 1 && (
               <Link
@@ -146,7 +146,7 @@ export default async function BrowseByMetadataPage({
   );
 }
 
-// Metadata for Next.js head
+// Optional: dynamic SEO title
 export const metadata: Metadata = {
   title: "Browse by " + (process.env.NEXT_PUBLIC_SITE_NAME ?? "SusManga"),
 };
