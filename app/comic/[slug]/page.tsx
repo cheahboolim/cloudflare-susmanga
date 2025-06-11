@@ -1,3 +1,5 @@
+// app/comic/[slug]/page.tsx
+
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -103,13 +105,12 @@ async function getComicBySlug(slug: string): Promise<ComicData | null> {
   };
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}) {
-  const supabase = await createClient();
+export async function generateMetadata(
+  props: any
+): Promise<import("next").Metadata> {
+  const { params } = props as { params: { slug: string } };
 
+  const supabase = await createClient();
   const { data: slugRow, error: slugErr } = await supabase
     .from("slug_map")
     .select("manga_id")
@@ -124,7 +125,6 @@ export async function generateMetadata({
   }
 
   const mangaId = slugRow.manga_id;
-
   const { data: manga, error: mangaErr } = await supabase
     .from("manga")
     .select("title, feature_image_url")
@@ -147,11 +147,10 @@ export async function generateMetadata({
   };
 }
 
-export default async function ComicDetailPage(props: {
-  params: { slug: string };
-}) {
-  const { params } = props;
-  const slug = params.slug;
+// --- Un-typed props for the page component itself ---
+export default async function ComicDetailPage(props: any) {
+  const { params } = props as { params: { slug: string } };
+  const { slug } = params;
 
   const comic = await getComicBySlug(slug);
   if (!comic) return notFound();
@@ -187,7 +186,7 @@ export default async function ComicDetailPage(props: {
               width={600}
               height={900}
               priority
-              unoptimized // <-- added here to bypass next/image optimization
+              unoptimized
               className="w-full rounded-lg hover:opacity-90 transition"
             />
           </Link>
