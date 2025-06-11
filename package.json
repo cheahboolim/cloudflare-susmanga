@@ -4,10 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run pages:build",
-    "pages:build": "npx @cloudflare/next-on-pages@1",
-    "preview": "npm run build && wrangler pages dev",
-    "deploy": "npm run build && wrangler pages deploy",
+    "build": "npx @cloudflare/next-on-pages@1",
+    "preview": "npx @cloudflare/next-on-pages@1 && wrangler pages dev .output",
+    "deploy": "npx @cloudflare/next-on-pages@1 && wrangler pages deploy .output",
     "start": "next start"
   },
   "dependencies": {
@@ -24,7 +23,6 @@
     "axios": "^1.9.0",
     "cheerio": "^1.0.0",
     "class-variance-authority": "^0.7.0",
-    "cloudflare-susmanga": "file:",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.468.0",
