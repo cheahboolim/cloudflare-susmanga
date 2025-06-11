@@ -1,4 +1,4 @@
-export const runtime = 'edge';
+export const runtime = "node";
 
 // app/api/r2-upload-url/route.ts
 import { NextRequest, NextResponse } from "next/server";
