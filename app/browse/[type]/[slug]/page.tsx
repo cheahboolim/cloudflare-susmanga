@@ -6,25 +6,16 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { type Metadata } from "next";
 
-// ----- 1) Define the exact props shape -----
-type PageProps = {
-  params: {
-    type: string;
-    slug: string;
-  };
-  searchParams?: Record<string, string | string[] | undefined>;
-};
-
-// ----- 2) Export your metadata (unchanged) -----
 export const metadata: Metadata = {
   title: "Browse by " + (process.env.NEXT_PUBLIC_SITE_NAME ?? "SusManga"),
 };
 
-// ----- 3) Use PageProps in the signature -----
-export default async function BrowseByMetadataPage({
-  params,
-  searchParams,
-}: PageProps) {
+export default async function BrowseByMetadataPage(props: any) {
+  const { params, searchParams } = props as {
+    params: { type: string; slug: string };
+    searchParams?: Record<string, string | string[] | undefined>;
+  };
+
   const supabase = await createClient();
   const { type, slug } = params;
 
@@ -33,7 +24,7 @@ export default async function BrowseByMetadataPage({
   const pageSize = 20;
   const offset = (page - 1) * pageSize;
 
-  // Validate metadata type
+  // Validate type
   const allowedTypes = [
     "tags",
     "artists",
@@ -57,27 +48,26 @@ export default async function BrowseByMetadataPage({
   };
   const metadataTable = metadataTableMap[type];
 
-  // Singular helper
   function singular(t: string) {
     return t.endsWith("ies") ? t.slice(0, -3) + "y" : t.slice(0, -1);
   }
   const metadataIdField = `${singular(type)}_id`;
 
-  // Fetch the metadata row
-  const { data: metadataRow, error: metadataError } = await supabase
+  // Fetch metadata row
+  const { data: metadataRow, error: mErr } = await supabase
     .from(type)
     .select("id")
     .eq("slug", slug)
     .single();
-  if (metadataError || !metadataRow) return notFound();
+  if (mErr || !metadataRow) return notFound();
 
   // Fetch related manga IDs
-  const { data: related, error: relError } = await supabase
+  const { data: related, error: rErr } = await supabase
     .from(metadataTable)
     .select("manga_id")
     .eq(metadataIdField, metadataRow.id)
     .limit(1000);
-  if (relError || !related) return notFound();
+  if (rErr || !related) return notFound();
 
   const allIds = related.map((r) => r.manga_id);
   const sliceIds = allIds.slice(offset, offset + pageSize);
@@ -94,11 +84,11 @@ export default async function BrowseByMetadataPage({
   }
 
   // Fetch manga entries
-  const { data: manga, error: mangaError } = await supabase
+  const { data: manga, error: mgErr } = await supabase
     .from("manga")
     .select("id, title, feature_image_url")
     .in("id", sliceIds);
-  if (mangaError || !manga) return notFound();
+  if (mgErr || !manga) return notFound();
 
   // Fetch slugs
   const { data: slugs } = await supabase
